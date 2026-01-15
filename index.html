@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenSVG</title>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Toolbar -->
+      <header class="toolbar">
+        <div class="toolbar-buttons">
+          <button id="btn-open" title="Open SVG file">Open</button>
+          <button id="btn-save" title="Save file" disabled>Save</button>
+          <button id="btn-save-as" title="Save as new file" disabled>Save As</button>
+          <button id="btn-optimize" title="Optimize/minify SVG" disabled>Optimize</button>
+        </div>
+        <div class="toolbar-title">OpenSVG</div>
+      </header>
+
+      <!-- Main content -->
+      <main class="content">
+        <!-- SVG Canvas -->
+        <section class="canvas-container">
+          <div id="canvas" class="canvas">
+            <div class="canvas-empty">
+              <p>No SVG loaded</p>
+              <p class="hint">Click "Open" to load an SVG file</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Color Panel -->
+        <aside class="color-panel">
+          <h2>Properties</h2>
+          <div id="panel-content" class="panel-content">
+            <p class="panel-empty">Select an element to edit its colors</p>
+          </div>
+        </aside>
+      </main>
+
+      <!-- Status bar -->
+      <footer class="status-bar">
+        <span id="status-message">Ready</span>
+        <span id="status-file"></span>
+        <span id="status-size"></span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
