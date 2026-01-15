@@ -1,4 +1,5 @@
-mod core;
+pub mod cli;
+pub mod core;
 
 // Tauri commands will be added here
 #[tauri::command]
