@@ -22,10 +22,28 @@ If MacOS blocks the app from opening, go to System Preferences > Security & Priv
 If this option is not available and instead MacOS states “OpenSVG is damaged and can’t be opened. You should move it to the Bin.”, open Terminal and run:
 
 ```bash
-bashxattr -cr /Applications/OpenSVG.app # Adjust the path if you placed it elsewhere
+xattr -cr /Applications/OpenSVG.app
 ```
 
 Then try opening the app again.
+
+#### Using the CLI
+
+After installing from DMG, you can access the CLI tool from Terminal:
+
+```bash
+# Direct usage
+/Applications/OpenSVG.app/Contents/MacOS/opensvg optimize icon.svg
+
+# Or create an alias for easier access
+echo 'alias opensvg="/Applications/OpenSVG.app/Contents/MacOS/opensvg"' >> ~/.zshrc
+source ~/.zshrc
+
+# Now you can use it directly
+opensvg optimize icon.svg
+opensvg fill icon.svg "#ff0000"
+opensvg stroke icon.svg "#0000ff"
+```
 
 ### Build from Source
 
