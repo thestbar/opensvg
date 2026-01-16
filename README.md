@@ -17,6 +17,16 @@ A lightweight desktop application for viewing, editing colors, and optimizing SV
 
 Download the latest `.dmg` from the releases page, open it, and drag OpenSVG to your Applications folder.
 
+If MacOS blocks the app from opening, go to System Preferences > Security & Privacy and click "Open Anyway".
+
+If this option is not available and instead MacOS states “OpenSVG is damaged and can’t be opened. You should move it to the Bin.”, open Terminal and run:
+
+```bash
+bashxattr -cr /Applications/OpenSVG.app # Adjust the path if you placed it elsewhere
+```
+
+Then try opening the app again.
+
 ### Build from Source
 
 Requirements:
