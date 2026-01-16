@@ -36,6 +36,13 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "category": "DeveloperTool",
+    "shortDescription": "Simple SVG editor and optimizer",
+    "longDescription": "OpenSVG is a lightweight desktop application for viewing, editing colors, and optimizing SVG files. It includes both a graphical interface and a command-line tool.",
+    "copyright": "2026 OpenSVG",
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
   }
 }
