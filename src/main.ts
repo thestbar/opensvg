@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { open, save } from "@tauri-apps/plugin-dialog";
+import { open, save, confirm } from "@tauri-apps/plugin-dialog";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 
 // Types for Tauri responses
 interface SvgResponse {
@@ -23,6 +24,7 @@ interface AppState {
   originalContent: string | null;
   isModified: boolean;
   selectedElement: SVGElement | null;
+  isLoading: boolean;
 }
 
 const state: AppState = {
@@ -31,6 +33,7 @@ const state: AppState = {
   originalContent: null,
   isModified: false,
   selectedElement: null,
+  isLoading: false,
 };
 
 // DOM Elements
@@ -45,8 +48,10 @@ const statusFile = document.getElementById("status-file") as HTMLSpanElement;
 const statusSize = document.getElementById("status-size") as HTMLSpanElement;
 
 // Initialize application
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   setupEventListeners();
+  setupKeyboardShortcuts();
+  await setupDragAndDrop();
   updateUI();
 });
 
@@ -57,8 +62,81 @@ function setupEventListeners() {
   btnOptimize.addEventListener("click", handleOptimize);
 }
 
+function setupKeyboardShortcuts() {
+  document.addEventListener("keydown", async (e) => {
+    const isMod = e.metaKey || e.ctrlKey;
+
+    if (isMod && e.key === "o") {
+      e.preventDefault();
+      await handleOpen();
+    } else if (isMod && e.key === "s") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        await handleSaveAs();
+      } else {
+        await handleSave();
+      }
+    }
+  });
+}
+
+async function setupDragAndDrop() {
+  const webview = getCurrentWebview();
+
+  await webview.onDragDropEvent(async (event) => {
+    if (event.payload.type === "over") {
+      canvas.classList.add("drag-over");
+    } else if (event.payload.type === "leave" || event.payload.type === "drop") {
+      canvas.classList.remove("drag-over");
+    }
+
+    if (event.payload.type === "drop") {
+      const paths = event.payload.paths;
+      if (paths && paths.length > 0) {
+        const filePath = paths[0];
+        if (filePath.toLowerCase().endsWith(".svg")) {
+          // Check for unsaved changes first
+          if (state.isModified) {
+            const shouldContinue = await confirmUnsavedChanges();
+            if (!shouldContinue) return;
+          }
+
+          // Load the dropped SVG file using our existing function
+          await loadSvg(filePath);
+        } else {
+          showToast("Please drop an SVG file", "warning");
+        }
+      }
+    }
+  });
+}
+
+async function confirmUnsavedChanges(): Promise<boolean> {
+  return await confirm(
+    "You have unsaved changes. Do you want to continue without saving?",
+    { title: "Unsaved Changes", kind: "warning" }
+  );
+}
+
+function setLoading(loading: boolean) {
+  state.isLoading = loading;
+  document.body.classList.toggle("loading", loading);
+  btnOpen.disabled = loading;
+  btnSave.disabled = loading || !state.svgContent || !state.isModified;
+  btnSaveAs.disabled = loading || !state.svgContent;
+  btnOptimize.disabled = loading || !state.svgContent;
+}
+
 // File operations
 async function handleOpen() {
+  if (state.isLoading) return;
+
+  // Check for unsaved changes
+  if (state.isModified) {
+    const shouldContinue = await confirmUnsavedChanges();
+    if (!shouldContinue) return;
+  }
+
   try {
     const selected = await open({
       multiple: false,
@@ -69,14 +147,22 @@ async function handleOpen() {
       await loadSvg(selected as string);
     }
   } catch (error) {
-    showError(`Failed to open file: ${error}`);
+    showToast(`Failed to open file: ${error}`, "error");
   }
 }
 
+const LARGE_FILE_THRESHOLD = 5 * 1024 * 1024; // 5MB
+
 async function loadSvg(path: string) {
   try {
+    setLoading(true);
     setStatus("Loading...");
     const response = await invoke<SvgResponse>("read_svg", { path });
+
+    // Warn about large files
+    if (response.size > LARGE_FILE_THRESHOLD) {
+      showToast("Large file detected. Performance may be affected.", "warning");
+    }
 
     state.currentPath = path;
     state.svgContent = response.content;
@@ -89,14 +175,17 @@ async function loadSvg(path: string) {
     statusFile.textContent = getFileName(path);
     statusSize.textContent = response.size_formatted;
   } catch (error) {
-    showError(`Failed to load SVG: ${error}`);
+    showToast(`Failed to load SVG: ${error}`, "error");
+  } finally {
+    setLoading(false);
   }
 }
 
 async function handleSave() {
-  if (!state.currentPath || !state.svgContent) return;
+  if (!state.currentPath || !state.svgContent || state.isLoading) return;
 
   try {
+    setLoading(true);
     setStatus("Saving...");
     await invoke("write_svg", {
       path: state.currentPath,
@@ -106,14 +195,17 @@ async function handleSave() {
     state.originalContent = state.svgContent;
     state.isModified = false;
     updateUI();
+    showToast("File saved successfully", "success");
     setStatus("Saved");
   } catch (error) {
-    showError(`Failed to save: ${error}`);
+    showToast(`Failed to save: ${error}`, "error");
+  } finally {
+    setLoading(false);
   }
 }
 
 async function handleSaveAs() {
-  if (!state.svgContent) return;
+  if (!state.svgContent || state.isLoading) return;
 
   try {
     const path = await save({
@@ -122,6 +214,7 @@ async function handleSaveAs() {
     });
 
     if (path) {
+      setLoading(true);
       setStatus("Saving...");
       await invoke("write_svg", { path, content: state.svgContent });
 
@@ -130,17 +223,21 @@ async function handleSaveAs() {
       state.isModified = false;
       updateUI();
       statusFile.textContent = getFileName(path);
+      showToast("File saved successfully", "success");
       setStatus("Saved");
     }
   } catch (error) {
-    showError(`Failed to save: ${error}`);
+    showToast(`Failed to save: ${error}`, "error");
+  } finally {
+    setLoading(false);
   }
 }
 
 async function handleOptimize() {
-  if (!state.svgContent) return;
+  if (!state.svgContent || state.isLoading) return;
 
   try {
+    setLoading(true);
     setStatus("Optimizing...");
     const response = await invoke<OptimizeResponse>("optimize_svg", {
       content: state.svgContent,
@@ -152,18 +249,35 @@ async function handleOptimize() {
     renderSvg(response.content);
     updateUI();
     statusSize.textContent = response.size_formatted;
-    setStatus(
-      `Optimized: ${response.reduction_percent.toFixed(1)}% reduction`
-    );
+    const msg = `Optimized: ${response.reduction_percent.toFixed(1)}% reduction`;
+    setStatus(msg);
+    showToast(msg, "success");
   } catch (error) {
-    showError(`Failed to optimize: ${error}`);
+    showToast(`Failed to optimize: ${error}`, "error");
+  } finally {
+    setLoading(false);
   }
+}
+
+function showEmptyState(message: string) {
+  canvas.innerHTML = `
+    <div class="canvas-empty">
+      <p>${message}</p>
+      <p class="hint">Open an SVG file to get started</p>
+    </div>
+  `;
 }
 
 // SVG rendering
 function renderSvg(content: string) {
   // Clear previous content
   canvas.innerHTML = "";
+
+  // Check for empty or minimal content
+  if (!content || content.trim().length === 0) {
+    showEmptyState("Empty SVG file");
+    return;
+  }
 
   // Create wrapper for the SVG
   const wrapper = document.createElement("div");
@@ -172,7 +286,21 @@ function renderSvg(content: string) {
 
   // Get the SVG element
   const svg = wrapper.querySelector("svg");
-  if (svg) {
+  if (!svg) {
+    showEmptyState("No valid SVG element found");
+    return;
+  }
+
+  // Check for SVG with no visual content (just warn, still show the SVG)
+  const visualElements = svg.querySelectorAll(
+    "path, rect, circle, ellipse, line, polyline, polygon, text, image, use"
+  );
+  if (visualElements.length === 0) {
+    showToast("SVG has no visual elements", "warning");
+  }
+
+  // SVG exists and is valid
+  {
     // Make SVG responsive
     svg.style.maxWidth = "100%";
     svg.style.maxHeight = "100%";
@@ -298,9 +426,10 @@ function setupColorInputs() {
 }
 
 async function applyColors(fill: string, stroke: string) {
-  if (!state.svgContent) return;
+  if (!state.svgContent || state.isLoading) return;
 
   try {
+    setLoading(true);
     setStatus("Applying colors...");
 
     // Apply fill
@@ -322,11 +451,14 @@ async function applyColors(fill: string, stroke: string) {
     updateUI();
     statusSize.textContent = response.size_formatted;
     setStatus("Colors applied");
+    showToast("Colors applied successfully", "success");
 
     // Reselect if there was a selection
     deselectElement();
   } catch (error) {
-    showError(`Failed to apply colors: ${error}`);
+    showToast(`Failed to apply colors: ${error}`, "error");
+  } finally {
+    setLoading(false);
   }
 }
 
@@ -358,13 +490,34 @@ function setStatus(message: string) {
   statusMessage.textContent = message;
 }
 
-function showError(message: string) {
-  console.error(message);
-  setStatus(`Error: ${message}`);
-  statusMessage.style.color = "var(--error)";
+function showToast(message: string, type: "success" | "error" | "warning" = "success") {
+  // Remove existing toast if any
+  const existingToast = document.querySelector(".toast");
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.classList.add("show");
+  });
+
+  // Auto-remove after 3 seconds
   setTimeout(() => {
-    statusMessage.style.color = "";
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
   }, 3000);
+
+  // Also update status bar for errors
+  if (type === "error") {
+    console.error(message);
+    setStatus(`Error: ${message}`);
+  }
 }
 
 // Utility functions

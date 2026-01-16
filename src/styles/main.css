@@ -301,3 +301,55 @@ input[type="color"]::-webkit-color-swatch {
   border: none;
   border-radius: 2px;
 }
+
+/* Loading state */
+body.loading {
+  cursor: wait;
+}
+
+body.loading .toolbar button {
+  cursor: wait;
+}
+
+/* Drag and drop */
+.canvas.drag-over {
+  border: 2px dashed var(--accent);
+  background: rgba(74, 158, 255, 0.1);
+}
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 1000;
+  max-width: 400px;
+  text-align: center;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast-success {
+  background: var(--success);
+  color: white;
+}
+
+.toast-error {
+  background: var(--error);
+  color: white;
+}
+
+.toast-warning {
+  background: var(--warning);
+  color: white;
+}
