@@ -16,11 +16,22 @@ A lightweight desktop application for viewing, editing colors, and optimizing SV
 
 ### macOS
 
+#### Homebrew (recommended)
+
+```bash
+brew tap thestbar/opensvg
+brew install --cask opensvg
+```
+
+This installs both the GUI app and the `opensvg` CLI command.
+
+#### Manual (DMG)
+
 Download the latest `.dmg` from the releases page, open it, and drag OpenSVG to your Applications folder.
 
-If MacOS blocks the app from opening, go to System Preferences > Security & Privacy and click "Open Anyway".
+If macOS blocks the app from opening, go to System Preferences > Security & Privacy and click "Open Anyway".
 
-If this option is not available and instead MacOS states "OpenSVG is damaged and can't be opened. You should move it to the Bin.", open Terminal and run:
+If this option is not available and instead macOS states "OpenSVG is damaged and can't be opened. You should move it to the Bin.", open Terminal and run:
 
 ```bash
 xattr -cr /Applications/OpenSVG.app
@@ -28,19 +39,14 @@ xattr -cr /Applications/OpenSVG.app
 
 Then try opening the app again.
 
-#### Using the CLI
+#### Using the CLI (DMG install)
 
-After installing from DMG, you can access the CLI tool from Terminal:
+After installing from DMG, create an alias to use the CLI from Terminal:
 
 ```bash
-# Direct usage
-/Applications/OpenSVG.app/Contents/MacOS/opensvg optimize icon.svg
-
-# Or create an alias for easier access
 echo 'alias opensvg="/Applications/OpenSVG.app/Contents/MacOS/opensvg"' >> ~/.zshrc
 source ~/.zshrc
 
-# Now you can use it directly
 opensvg optimize icon.svg
 opensvg fill icon.svg "#ff0000"
 opensvg convert icon.svg icon.png
