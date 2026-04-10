@@ -2,6 +2,32 @@
 
 All notable changes to OpenSVG will be documented in this file.
 
+## [0.2.0] - 2026-04-10
+
+### Added
+
+#### GUI Application
+- **Convert button** - Export the current SVG to PNG or JPEG directly from the GUI
+  - Format selector (PNG / JPEG)
+  - Scale input with 0.1 step increments
+  - Live output dimensions preview
+  - Native save dialog for choosing the export location
+  - Closes on Cancel or backdrop click
+
+#### CLI Tool
+- **`opensvg convert <file> <output>`** - Convert an SVG file to a raster image (PNG or JPEG)
+  - `-s, --scale <factor>` - Scale factor applied to the SVG's natural size (default: `1.0`)
+  - `-q, --quiet` - Suppress status messages
+  - Alias: `opensvg export`
+  - Transparent areas are composited over white when exporting to JPEG
+
+### Technical Details
+
+- **SVG Rendering**: resvg 0.44 + tiny-skia 0.11 (pure-Rust renderer)
+- **JPEG output**: image 0.25 (RGB compositing over white background)
+
+---
+
 ## [0.1.0] - 2026-01-16
 
 ### Initial Release
@@ -64,4 +90,5 @@ OpenSVG is a lightweight desktop application for viewing, editing colors, and op
 
 ---
 
-[0.1.0]: https://github.com/yourusername/opensvg/releases/tag/v0.1.0
+[0.2.0]: https://github.com/thestbar/opensvg/releases/tag/v0.2.0
+[0.1.0]: https://github.com/thestbar/opensvg/releases/tag/v0.1.0

@@ -7,6 +7,7 @@ A lightweight desktop application for viewing, editing colors, and optimizing SV
 - **View SVGs** - Open and preview SVG files with a clean interface
 - **Edit Colors** - Change fill and stroke colors on SVG elements
 - **Optimize** - Minify SVGs by removing comments, metadata, and unnecessary whitespace
+- **Export** - Convert SVG files to PNG or JPEG at any scale
 - **Dual Interface** - Use the GUI app or CLI tool based on your workflow
 - **Drag & Drop** - Drop SVG files directly onto the canvas
 - **Keyboard Shortcuts** - Quick access with Cmd+O, Cmd+S, Cmd+Shift+S
@@ -19,7 +20,7 @@ Download the latest `.dmg` from the releases page, open it, and drag OpenSVG to 
 
 If MacOS blocks the app from opening, go to System Preferences > Security & Privacy and click "Open Anyway".
 
-If this option is not available and instead MacOS states “OpenSVG is damaged and can’t be opened. You should move it to the Bin.”, open Terminal and run:
+If this option is not available and instead MacOS states "OpenSVG is damaged and can't be opened. You should move it to the Bin.", open Terminal and run:
 
 ```bash
 xattr -cr /Applications/OpenSVG.app
@@ -42,7 +43,7 @@ source ~/.zshrc
 # Now you can use it directly
 opensvg optimize icon.svg
 opensvg fill icon.svg "#ff0000"
-opensvg stroke icon.svg "#0000ff"
+opensvg convert icon.svg icon.png
 ```
 
 ### Build from Source
@@ -54,7 +55,7 @@ Requirements:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/opensvg.git
+git clone https://github.com/thestbar/opensvg.git
 cd opensvg
 
 # Install dependencies
@@ -142,6 +143,30 @@ opensvg stroke icon.svg "#0000ff"
 opensvg stroke icon.svg "#0000ff" -o icon-outlined.svg
 ```
 
+#### Convert SVG to PNG / JPEG
+
+Render an SVG to a raster image. The output format is inferred from the file extension.
+
+```bash
+# Export to PNG at natural SVG size
+opensvg convert icon.svg icon.png
+
+# Export to JPEG
+opensvg convert icon.svg icon.jpg
+
+# Scale up 2x (great for high-DPI / @2x assets)
+opensvg convert icon.svg icon@2x.png --scale 2
+
+# Scale up 3x
+opensvg convert icon.svg icon@3x.png -s 3
+
+# Fractional scale
+opensvg convert icon.svg icon.png -s 1.5
+```
+
+> **Note:** JPEG output composites transparent areas over a white background.
+> The `export` alias also works: `opensvg export icon.svg icon.png`
+
 ### Color Formats
 
 The following color formats are supported:
@@ -162,10 +187,11 @@ opensvg/
 │   │   ├── main.rs        # Entry point (CLI/GUI detection)
 │   │   ├── lib.rs         # Tauri commands
 │   │   ├── cli.rs         # CLI implementation
-│   │   └── core/          # Core SVG processing
+│   │   └── core/          # Core processing
 │   │       ├── parser.rs  # SVG parsing
 │   │       ├── color.rs   # Color utilities
-│   │       └── optimizer.rs # SVG optimization
+│   │       ├── optimizer.rs # SVG optimization
+│   │       └── rasterizer.rs # SVG→PNG/JPEG rendering
 │   └── Cargo.toml
 └── package.json
 ```
@@ -175,6 +201,7 @@ opensvg/
 - **Frontend**: TypeScript, Vite
 - **Backend**: Rust, Tauri 2.0
 - **SVG Parsing**: quick-xml
+- **SVG Rendering**: resvg + tiny-skia
 - **Color Handling**: csscolorparser
 - **CLI**: clap
 

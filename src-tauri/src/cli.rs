@@ -2,7 +2,8 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 use crate::core::{
-    calculate_reduction, format_size, normalize_color, optimize, OptimizeConfig, SvgDocument,
+    calculate_reduction, format_size, normalize_color, optimize, rasterize, OptimizeConfig,
+    SvgDocument,
 };
 
 #[derive(Parser)]
@@ -51,7 +52,7 @@ pub enum Commands {
         quiet: bool,
     },
 
-    /// Change stroke color of all elements
+    /// Change stroke color of all elements in an SVG file
     Stroke {
         /// Input SVG file
         file: PathBuf,
@@ -62,6 +63,24 @@ pub enum Commands {
         /// Output file (default: overwrite input)
         #[arg(short, long)]
         output: Option<PathBuf>,
+
+        /// Suppress status messages
+        #[arg(short, long)]
+        quiet: bool,
+    },
+
+    /// Convert an SVG file to a raster image (PNG or JPEG)
+    #[command(alias = "export")]
+    Convert {
+        /// Input SVG file
+        file: PathBuf,
+
+        /// Output image file (.png, .jpg, or .jpeg)
+        output: PathBuf,
+
+        /// Scale factor applied to the SVG's natural size (default: 1.0)
+        #[arg(short, long, default_value = "1.0")]
+        scale: f32,
 
         /// Suppress status messages
         #[arg(short, long)]
@@ -92,6 +111,13 @@ pub fn run(cli: Cli) -> Result<(), String> {
             output,
             quiet,
         } => cmd_stroke(file, color, output, quiet),
+
+        Commands::Convert {
+            file,
+            output,
+            scale,
+            quiet,
+        } => cmd_convert(file, output, scale, quiet),
     }
 }
 
@@ -137,35 +163,62 @@ fn cmd_optimize(
     Ok(())
 }
 
-/// Change fill color of all elements
+/// Change fill color of all elements in an SVG file
 fn cmd_fill(
     file: PathBuf,
     color: String,
     output: Option<PathBuf>,
     quiet: bool,
 ) -> Result<(), String> {
-    // Validate and normalize color
     let normalized = normalize_color(&color)
         .map_err(|_| format!("Invalid color format: '{}'", color))?;
 
-    // Read input file
     let content = std::fs::read_to_string(&file)
         .map_err(|e| format!("Failed to read '{}': {}", file.display(), e))?;
 
-    // Parse and modify
     let mut doc = SvgDocument::parse(&content)
         .map_err(|e| format!("Failed to parse SVG: {}", e))?;
 
     doc.set_fill(&normalized)
         .map_err(|e| format!("Failed to set fill color: {}", e))?;
 
-    // Write output
     let out_path = output.unwrap_or(file.clone());
     std::fs::write(&out_path, doc.to_string())
         .map_err(|e| format!("Failed to write '{}': {}", out_path.display(), e))?;
 
     if !quiet {
         eprintln!("Updated fill color to {} in '{}'", normalized, out_path.display());
+    }
+
+    Ok(())
+}
+
+/// Convert an SVG file to a raster image (PNG or JPEG)
+fn cmd_convert(
+    file: PathBuf,
+    output: PathBuf,
+    scale: f32,
+    quiet: bool,
+) -> Result<(), String> {
+    if scale <= 0.0 {
+        return Err(format!("Scale must be greater than 0, got {}", scale));
+    }
+
+    let content = std::fs::read_to_string(&file)
+        .map_err(|e| format!("Failed to read '{}': {}", file.display(), e))?;
+
+    let (width, height) = rasterize(&content, &output, scale)
+        .map_err(|e| format!("{}", e))?;
+
+    if !quiet {
+        eprintln!(
+            "Converted '{}' → '{}' ({}×{}px, scale {:.2}x)",
+            file.display(),
+            output.display(),
+            width,
+            height,
+            scale
+        );
     }
 
     Ok(())

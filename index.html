@@ -15,6 +15,7 @@
           <button id="btn-save" title="Save file" disabled>Save</button>
           <button id="btn-save-as" title="Save as new file" disabled>Save As</button>
           <button id="btn-optimize" title="Optimize/minify SVG" disabled>Optimize</button>
+          <button id="btn-convert" title="Export as PNG or JPEG" disabled>Convert</button>
         </div>
         <div class="toolbar-title">OpenSVG</div>
       </header>
@@ -47,6 +48,41 @@
         <span id="status-size"></span>
       </footer>
     </div>
+    <!-- Convert / Export modal -->
+    <div id="convert-modal" class="modal-overlay" hidden>
+      <div class="modal-pane">
+        <h3 class="modal-title">Export as Image</h3>
+
+        <div class="modal-body">
+          <div class="modal-field">
+            <label>Format</label>
+            <div class="format-toggle">
+              <button class="format-btn active" data-format="png">PNG</button>
+              <button class="format-btn" data-format="jpeg">JPEG</button>
+            </div>
+          </div>
+
+          <div class="modal-field">
+            <label>Scale</label>
+            <div class="scale-row">
+              <input type="number" id="export-scale" value="1" min="0.1" max="10" step="0.1" />
+              <span class="scale-suffix">×</span>
+            </div>
+          </div>
+
+          <div class="modal-field">
+            <label>Output size</label>
+            <span id="export-dimensions" class="dimensions-preview">—</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-export-cancel" class="btn-modal-cancel">Cancel</button>
+          <button id="btn-export-confirm" class="btn-modal-confirm">Export…</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

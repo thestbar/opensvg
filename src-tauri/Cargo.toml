@@ -1,6 +1,6 @@
 [package]
 name = "opensvg"
-version = "0.1.0"
+version = "0.2.0"
 description = "A simple SVG editor"
 authors = [""]
 edition = "2021"
@@ -25,6 +25,10 @@ clap = { version = "4", features = ["derive"] }
 # SVG processing
 quick-xml = "0.37"
 csscolorparser = { version = "0.7", features = ["serde"] }
+
+# SVG rasterization and image output
+resvg = "0.44"
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
 
 # Error handling
 thiserror = "2"

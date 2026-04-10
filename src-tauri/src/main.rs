@@ -24,7 +24,7 @@ fn main() {
 fn is_cli_command(arg: &str) -> bool {
     matches!(
         arg,
-        "optimize" | "opt" | "fill" | "stroke" | "help" | "--help" | "-h" | "--version" | "-V"
+        "optimize" | "opt" | "fill" | "stroke" | "convert" | "export" | "help" | "--help" | "-h" | "--version" | "-V"
     )
 }
 

@@ -2,7 +2,8 @@ pub mod cli;
 pub mod core;
 
 use crate::core::{
-    calculate_reduction, format_size, normalize_color, optimize, OptimizeConfig, SvgDocument,
+    calculate_reduction, format_size, normalize_color, optimize, rasterize, OptimizeConfig,
+    SvgDocument,
 };
 
 /// Response for SVG operations with size info
@@ -115,6 +116,14 @@ fn validate_color(color: String) -> Result<String, String> {
     normalize_color(&color).map_err(|_| format!("Invalid color: '{}'", color))
 }
 
+/// Convert SVG content to a raster image file (PNG or JPEG)
+#[tauri::command]
+fn convert_svg(content: String, output_path: String, scale: f32) -> Result<(), String> {
+    rasterize(&content, std::path::Path::new(&output_path), scale)
+        .map(|_| ())
+        .map_err(|e| format!("{}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -126,7 +135,8 @@ pub fn run() {
             optimize_svg,
             set_fill_color,
             set_stroke_color,
-            validate_color
+            validate_color,
+            convert_svg
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

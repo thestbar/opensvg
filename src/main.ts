@@ -41,11 +41,13 @@ const btnOpen = document.getElementById("btn-open") as HTMLButtonElement;
 const btnSave = document.getElementById("btn-save") as HTMLButtonElement;
 const btnSaveAs = document.getElementById("btn-save-as") as HTMLButtonElement;
 const btnOptimize = document.getElementById("btn-optimize") as HTMLButtonElement;
+const btnConvert = document.getElementById("btn-convert") as HTMLButtonElement;
 const canvas = document.getElementById("canvas") as HTMLDivElement;
 const panelContent = document.getElementById("panel-content") as HTMLDivElement;
 const statusMessage = document.getElementById("status-message") as HTMLSpanElement;
 const statusFile = document.getElementById("status-file") as HTMLSpanElement;
 const statusSize = document.getElementById("status-size") as HTMLSpanElement;
+const convertModal = document.getElementById("convert-modal") as HTMLDivElement;
 
 // Initialize application
 document.addEventListener("DOMContentLoaded", async () => {
@@ -60,6 +62,27 @@ function setupEventListeners() {
   btnSave.addEventListener("click", handleSave);
   btnSaveAs.addEventListener("click", handleSaveAs);
   btnOptimize.addEventListener("click", handleOptimize);
+  btnConvert.addEventListener("click", openConvertPane);
+
+  // Convert modal controls
+  document.getElementById("btn-export-cancel")!.addEventListener("click", closeConvertPane);
+  document.getElementById("btn-export-confirm")!.addEventListener("click", handleExport);
+
+  // Format toggle
+  convertModal.querySelectorAll<HTMLButtonElement>(".format-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      convertModal.querySelectorAll(".format-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+
+  // Scale → update dimensions preview
+  document.getElementById("export-scale")!.addEventListener("input", updateDimensionsPreview);
+
+  // Close on backdrop click
+  convertModal.addEventListener("click", (e) => {
+    if (e.target === convertModal) closeConvertPane();
+  });
 }
 
 function setupKeyboardShortcuts() {
@@ -125,6 +148,7 @@ function setLoading(loading: boolean) {
   btnSave.disabled = loading || !state.svgContent || !state.isModified;
   btnSaveAs.disabled = loading || !state.svgContent;
   btnOptimize.disabled = loading || !state.svgContent;
+  btnConvert.disabled = loading || !state.svgContent;
 }
 
 // File operations
@@ -476,6 +500,7 @@ function updateUI() {
   btnSave.disabled = !hasFile || !isModified;
   btnSaveAs.disabled = !hasFile;
   btnOptimize.disabled = !hasFile;
+  btnConvert.disabled = !hasFile;
 
   // Update window title indicator
   if (state.currentPath) {
@@ -517,6 +542,112 @@ function showToast(message: string, type: "success" | "error" | "warning" = "suc
   if (type === "error") {
     console.error(message);
     setStatus(`Error: ${message}`);
+  }
+}
+
+// Convert / Export pane
+function getSvgNaturalSize(svgContent: string): { width: number; height: number } | null {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgContent, "image/svg+xml");
+  const svg = doc.querySelector("svg");
+  if (!svg) return null;
+
+  const w = parseFloat(svg.getAttribute("width") || "0");
+  const h = parseFloat(svg.getAttribute("height") || "0");
+  if (w > 0 && h > 0) return { width: w, height: h };
+
+  const vb = svg.getAttribute("viewBox");
+  if (vb) {
+    const parts = vb.trim().split(/[\s,]+/);
+    if (parts.length >= 4) {
+      const vw = parseFloat(parts[2]);
+      const vh = parseFloat(parts[3]);
+      if (vw > 0 && vh > 0) return { width: vw, height: vh };
+    }
+  }
+
+  return null;
+}
+
+function updateDimensionsPreview() {
+  const scaleInput = document.getElementById("export-scale") as HTMLInputElement;
+  const preview = document.getElementById("export-dimensions") as HTMLSpanElement;
+  if (!state.svgContent || !scaleInput || !preview) return;
+
+  const size = getSvgNaturalSize(state.svgContent);
+  if (!size) {
+    preview.textContent = "unknown";
+    return;
+  }
+
+  const scale = parseFloat(scaleInput.value) || 1;
+  const w = Math.round(size.width * scale);
+  const h = Math.round(size.height * scale);
+  preview.textContent = `${w} × ${h} px`;
+}
+
+function openConvertPane() {
+  if (!state.svgContent) return;
+
+  // Reset to defaults
+  const scaleInput = document.getElementById("export-scale") as HTMLInputElement;
+  scaleInput.value = "1";
+  convertModal.querySelectorAll(".format-btn").forEach((b, i) => {
+    b.classList.toggle("active", i === 0); // default PNG
+  });
+
+  updateDimensionsPreview();
+  convertModal.removeAttribute("hidden");
+}
+
+function closeConvertPane() {
+  convertModal.setAttribute("hidden", "");
+}
+
+async function handleExport() {
+  if (!state.svgContent) return;
+
+  const activeFormat = convertModal.querySelector<HTMLButtonElement>(".format-btn.active");
+  const format = activeFormat?.dataset.format ?? "png";
+  const scaleInput = document.getElementById("export-scale") as HTMLInputElement;
+  const scale = parseFloat(scaleInput.value) || 1;
+
+  if (scale <= 0) {
+    showToast("Scale must be greater than 0", "warning");
+    return;
+  }
+
+  const baseName = state.currentPath
+    ? getFileName(state.currentPath).replace(/\.svg$/i, "")
+    : "export";
+
+  const outputPath = await save({
+    filters: [
+      format === "png"
+        ? { name: "PNG Image", extensions: ["png"] }
+        : { name: "JPEG Image", extensions: ["jpg", "jpeg"] },
+    ],
+    defaultPath: `${baseName}.${format === "jpeg" ? "jpg" : "png"}`,
+  });
+
+  if (!outputPath) return;
+
+  closeConvertPane();
+
+  try {
+    setLoading(true);
+    setStatus("Exporting...");
+    await invoke("convert_svg", {
+      content: state.svgContent,
+      outputPath,
+      scale,
+    });
+    showToast(`Exported to ${getFileName(outputPath)}`, "success");
+    setStatus("Ready");
+  } catch (error) {
+    showToast(`Export failed: ${error}`, "error");
+  } finally {
+    setLoading(false);
   }
 }
 
