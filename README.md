@@ -25,6 +25,14 @@ brew install --cask opensvg
 
 This installs both the GUI app and the `opensvg` CLI command.
 
+If macOS says "OpenSVG is damaged and can't be opened", run:
+
+```bash
+xattr -cr /Applications/OpenSVG.app
+```
+
+Then try opening the app again.
+
 #### Manual (DMG)
 
 Download the latest `.dmg` from the releases page, open it, and drag OpenSVG to your Applications folder.
