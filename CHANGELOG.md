@@ -2,6 +2,25 @@
 
 All notable changes to OpenSVG will be documented in this file.
 
+## [0.2.1] - 2026-07-03
+
+Maintenance release — no functional changes to the app.
+
+### Fixed
+
+- **Homebrew tap**: replaced the deprecated `depends_on macos: ">= :catalina"` string
+  comparison with the symbol form `depends_on macos: :catalina`, silencing the
+  deprecation warning printed by `brew update` / `brew upgrade`
+
+### Documentation
+
+- Added Homebrew installation instructions to the README
+- Added a note about clearing the quarantine attribute (`xattr -cr`) when macOS
+  blocks the app after a DMG install
+- Documented the CLI alias setup for macOS DMG installations
+
+---
+
 ## [0.2.0] - 2026-04-10
 
 ### Added
@@ -90,5 +109,6 @@ OpenSVG is a lightweight desktop application for viewing, editing colors, and op
 
 ---
 
+[0.2.1]: https://github.com/thestbar/opensvg/releases/tag/v0.2.1
 [0.2.0]: https://github.com/thestbar/opensvg/releases/tag/v0.2.0
 [0.1.0]: https://github.com/thestbar/opensvg/releases/tag/v0.1.0
