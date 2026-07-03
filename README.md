@@ -20,18 +20,26 @@ A lightweight desktop application for viewing, editing colors, and optimizing SV
 
 ```bash
 brew tap thestbar/opensvg
-brew install --cask opensvg
+brew install --cask opensvg --no-quarantine
 ```
 
 This installs both the GUI app and the `opensvg` CLI command.
 
-If macOS says "OpenSVG is damaged and can't be opened", run:
+The `--no-quarantine` flag is needed because OpenSVG is not yet code-signed
+and notarized — without it, macOS Gatekeeper blocks the app ("OpenSVG is
+damaged and can't be opened"). The same applies when upgrading, since
+Homebrew re-applies the quarantine attribute on every upgrade:
+
+```bash
+brew upgrade --cask opensvg --no-quarantine
+```
+
+If you installed or upgraded without the flag and the app is blocked,
+clear the quarantine attribute manually and try again:
 
 ```bash
 xattr -cr /Applications/OpenSVG.app
 ```
-
-Then try opening the app again.
 
 #### Manual (DMG)
 

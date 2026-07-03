@@ -13,6 +13,12 @@ All notable changes to OpenSVG will be documented in this file.
   `zap trash` paths must be updated to match (keeping the old `com.opensvg.app`
   paths listed so `brew uninstall --zap` also cleans up data from older versions).
 
+### Documentation
+
+- Homebrew install: documented `--no-quarantine` and clarified that `brew upgrade`
+  re-applies the macOS quarantine attribute on every upgrade until the app is
+  code-signed and notarized
+
 ---
 
 ## [0.2.1] - 2026-07-03
