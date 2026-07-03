@@ -2,6 +2,19 @@
 
 All notable changes to OpenSVG will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Bundle identifier** renamed from `com.opensvg.app` to `com.thestbar.opensvg` —
+  the old identifier ended with `.app`, which conflicts with the macOS application
+  bundle extension (Tauri build warning). Note for the next release: user preferences
+  and Application Support paths move to the new identifier, and the Homebrew cask's
+  `zap trash` paths must be updated to match (keeping the old `com.opensvg.app`
+  paths listed so `brew uninstall --zap` also cleans up data from older versions).
+
+---
+
 ## [0.2.1] - 2026-07-03
 
 Maintenance release — no functional changes to the app.
